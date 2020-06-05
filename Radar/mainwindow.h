@@ -4,9 +4,7 @@
 #include <QMainWindow>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
-#include <QPainter>
 #include "chart.h"
-#include "parameters.h"
 #include "thread.h"
 
 namespace Ui {
@@ -22,22 +20,21 @@ public:
     ~MainWindow();
 
 private slots:
-    void externalThread_tick();
+    void externalThreadTick();
     void sendCommand();
 
 private:
     Ui::MainWindow *ui;
     void paintEvent(QPaintEvent *event);
 
-    QByteArray senddata;
-    QByteArray readdata;
+    QByteArray sendData;
+    QByteArray readData;
     QSerialPort serial;
     QVector<double> distanceData;
     Thread thread;
 
     Chart chart;
-    int N;
-    int n;
+    int sample_nth;
 };
 
 #endif // MAINWINDOW_H

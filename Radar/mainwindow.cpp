@@ -5,18 +5,17 @@
 MainWindow::MainWindow(QWidget *parent) :
 QMainWindow(parent), ui(new Ui::MainWindow)
 {
-    N = DSIZE2;
-    n = N-1;
-    distanceData.resize(N);
+    sample_nth = (DATA_SIZE / 2) - 1;
+    distanceData.resize(DATA_SIZE/2);
     distanceData.fill(0);
 
     ui->setupUi(this);
-    connect(&thread, SIGNAL(tick()), this, SLOT(externalThread_tick()));
+    connect(&thread, SIGNAL(tick()), this, SLOT(externalThreadTick()));
     connect(ui->actionRun, SIGNAL(triggered()), this, SLOT(sendCommand()));
 
     ui->statusBar->showMessage("No device");
     const auto infos = QSerialPortInfo::availablePorts();
-    for (const QSerialPortInfo &info : infos)
+    for (const QSerialPortInfo& info : infos)
     {
         if(info.serialNumber()=="NXP-77")
         {
@@ -47,17 +46,17 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::externalThread_tick()
+void MainWindow::externalThreadTick()
 {
     if (serial.size() >= 2)
     {
-        readdata = serial.readAll();
-        uint16_t* sample=reinterpret_cast<uint16_t*>(readdata.data());
-        distanceData[n] = static_cast<double>(*sample);
-        --n;
-        if(n<0)
+        readData = serial.readAll();
+        uint16_t* sample=reinterpret_cast<uint16_t*>(readData.data());
+        distanceData[sample_nth] = static_cast<double>(*sample);
+        --sample_nth;
+        if(sample_nth < 0)
         {
-            n=N-1;
+            sample_nth = (DATA_SIZE / 2) - 1;
         }
         update();
         if(ui->actionRun->isChecked())
@@ -69,9 +68,9 @@ void MainWindow::externalThread_tick()
 
 void MainWindow::sendCommand()
 {
-    senddata.clear();
-    senddata[0]=static_cast<char>(128);
-    serial.write(senddata);
+    sendData.clear();
+    sendData[0]=static_cast<char>(128);
+    serial.write(sendData);
 }
 
 std::random_device rd;
@@ -80,12 +79,13 @@ void MainWindow::paintEvent(QPaintEvent *event)
     Q_UNUSED(event)
     QPainter painter(this);
     /* ******************** visualization without distance reader ********************** */
-    //std::uniform_real_distribution<double> randomNumber(0, 4000);
-    //distanceData[n] = randomNumber(rd);
-    //--n;
-    //if(n<0){
-    //    n=N-1;
-    //}
+    std::uniform_real_distribution<double> randomNumber(0, 4000);
+    distanceData[sample_nth] = randomNumber(rd);
+    --sample_nth;
+    if(sample_nth<0)
+    {
+        sample_nth = (DATA_SIZE / 2) - 1;
+    }
     /* ******************** visualization without distance reader ********************** */
     update();
     chart.drawRadar(painter, centralWidget()->geometry());
